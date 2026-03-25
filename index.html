@@ -18,637 +18,713 @@
     --border: #30363d;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  html, body {
+  html { font-size: 16px; }
+
+  body {
     font-family: 'Noto Sans KR', sans-serif;
     background: var(--bg);
     color: var(--text);
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    touch-action: pan-y;
-  }
-
-  /* ── SLIDE WRAPPER ── */
-  .slides-wrapper {
-    width: 100%;
-    height: 100vh;
-    position: relative;
+    min-height: 100vh;
     overflow: hidden;
   }
 
+  /* ── 슬라이드 컨테이너 ── */
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  /* 배경 패턴 (항상 고정) */
+  .bg-dots {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  /* ── 슬라이드 ── */
   .slide {
-    display: none;
     position: absolute;
     inset: 0;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding: clamp(20px, 5vw, 56px) clamp(16px, 6vw, 64px) 100px;
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* 슬라이드별 배경 */
+  .s0 { background: radial-gradient(ellipse 70% 60% at 25% 50%, #1c2d52 0%, #0d1117 100%); }
+  .s1 { background: radial-gradient(ellipse 70% 60% at 75% 30%, #221c38 0%, #0d1117 100%); }
+  .s2 { background: radial-gradient(ellipse 70% 60% at 20% 70%, #0e2018 0%, #0d1117 100%); }
+  .s3 { background: radial-gradient(ellipse 70% 60% at 80% 60%, #241309 0%, #0d1117 100%); }
+  .s4 { background: radial-gradient(ellipse 70% 60% at 50% 20%, #0d1c2e 0%, #0d1117 100%); }
+  .s5 { background: radial-gradient(ellipse 70% 60% at 40% 75%, #1c1030 0%, #0d1117 100%); }
+
+  /* ── 슬라이드 내부 패딩 ── */
+  .slide-inner {
+    min-height: 100vh;
+    padding: 52px 60px 110px;
+    display: flex;
     flex-direction: column;
     justify-content: center;
-    animation: fadeIn 0.4s ease;
-  }
-  .slide.active { display: flex; }
-
-  /* 내용이 많아 화면 넘칠 때 위에서 시작 */
-  .slide.scroll-top { justify-content: flex-start; padding-top: clamp(24px, 5vw, 56px); }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
   }
 
-  .slide-0 { background: radial-gradient(ellipse at 30% 50%, #1a2744 0%, #0d1117 70%); }
-  .slide-1 { background: radial-gradient(ellipse at 70% 30%, #1f1b2e 0%, #0d1117 70%); }
-  .slide-2 { background: radial-gradient(ellipse at 20% 70%, #0e2018 0%, #0d1117 70%); }
-  .slide-3 { background: radial-gradient(ellipse at 80% 60%, #1f1209 0%, #0d1117 70%); }
-  .slide-4 { background: radial-gradient(ellipse at 50% 20%, #0c1a2a 0%, #0d1117 70%); }
-  .slide-5 { background: radial-gradient(ellipse at 40% 70%, #1a0f2e 0%, #0d1117 70%); }
+  /* 타이틀 슬라이드는 세로 가운데 정렬 유지 */
+  .s0 .slide-inner { justify-content: center; }
 
-  .dot-grid {
-    position: fixed; inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none; z-index: 0;
-  }
-  .glow {
-    position: fixed; border-radius: 50%;
-    pointer-events: none; opacity: 0.1; filter: blur(80px); z-index: 0;
-  }
-  .g1 { width:min(400px,80vw);height:min(400px,80vw);background:var(--accent1);top:-80px;right:-80px; }
-  .g2 { width:min(300px,60vw);height:min(300px,60vw);background:var(--accent2);bottom:-60px;left:-60px; }
-  .g3 { width:min(350px,70vw);height:min(350px,70vw);background:var(--accent3);top:40%;right:15%; }
-  .g4 { width:min(350px,70vw);height:min(350px,70vw);background:var(--accent4);bottom:5%;left:25%; }
-  .g5 { width:min(400px,80vw);height:min(400px,80vw);background:#a29bfe;top:0;right:5%; }
-
-  /* ── NAV ── */
-  .nav {
-    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 10px; z-index: 200;
-  }
-  .nav button {
-    background: rgba(22,27,34,0.92); border: 1px solid var(--border); color: var(--text);
-    padding: 10px 24px; border-radius: 999px;
-    font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
-    cursor: pointer; transition: all 0.2s;
-    backdrop-filter: blur(8px);
-  }
-  .nav button:hover, .nav button:active { background: var(--accent1); color: #000; border-color: var(--accent1); }
-
-  .dot-nav {
-    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 7px; z-index: 200;
-  }
-  .dot-nav span {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--border); cursor: pointer; transition: all 0.3s;
-    display: block;
-  }
-  .dot-nav span.on { background: var(--accent1); transform: scale(1.5); }
-
-  .slide-num {
-    position: fixed; bottom: 20px; right: 16px;
-    font-size: 11px; color: var(--muted); letter-spacing: 2px; z-index: 200;
-  }
+  /* 나머지는 위에서 시작 */
+  .s1 .slide-inner,
+  .s2 .slide-inner,
+  .s3 .slide-inner,
+  .s4 .slide-inner,
+  .s5 .slide-inner { justify-content: flex-start; }
 
   /* ── 공통 텍스트 ── */
-  .section-tag {
-    font-size: clamp(10px, 2vw, 12px); letter-spacing: 3px; color: var(--accent3);
-    text-transform: uppercase; margin-bottom: 4px; font-weight: 700; position: relative; z-index: 1;
+  .tag {
+    font-size: 11px; letter-spacing: 3px; color: var(--accent3);
+    text-transform: uppercase; font-weight: 700; margin-bottom: 6px;
   }
-  .section-title {
+  .stitle {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: clamp(24px, 5.5vw, 52px); margin-bottom: clamp(16px, 3vw, 28px);
-    color: var(--text); line-height: 1.2; position: relative; z-index: 1;
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.15;
+    margin-bottom: 28px;
   }
 
-  /* ── SLIDE 0 TITLE ── */
-  .title-badge {
-    display: inline-block; background: var(--accent1); color: #000;
-    font-size: clamp(10px, 2.5vw, 12px); font-weight: 700;
-    padding: 4px 12px; border-radius: 999px; letter-spacing: 2px;
-    margin-bottom: clamp(12px, 3vw, 18px); position: relative; z-index: 1;
+  /* ─────────────────────────────
+     SLIDE 0 — 타이틀
+  ───────────────────────────── */
+  .badge {
+    display: inline-block;
+    background: var(--accent1); color: #000;
+    font-size: 11px; font-weight: 700;
+    padding: 4px 14px; border-radius: 999px;
+    letter-spacing: 2px; margin-bottom: 20px;
   }
   .title-main {
     font-family: 'Black Han Sans', sans-serif;
-    font-size: clamp(40px, 10vw, 96px); line-height: 1.05; letter-spacing: -1px;
-    background: linear-gradient(135deg, #f7c948, #ff6b6b, #4ecdc4);
+    font-size: clamp(48px, 9vw, 100px);
+    line-height: 1.05; letter-spacing: -1px;
+    background: linear-gradient(135deg, #f7c948 0%, #ff6b6b 50%, #4ecdc4 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    position: relative; z-index: 1;
+    margin-bottom: 14px;
   }
-  .title-sub { font-size: clamp(13px, 3vw, 17px); color: var(--muted); margin-top: 12px; position: relative; z-index: 1; }
+  .title-sub { font-size: clamp(14px, 2vw, 18px); color: var(--muted); margin-bottom: 40px; }
   .title-meta {
-    display: flex; flex-wrap: wrap; gap: clamp(16px, 4vw, 32px);
-    margin-top: clamp(24px, 5vw, 44px); position: relative; z-index: 1;
+    display: flex; flex-wrap: wrap; gap: 28px;
   }
-  .meta-item { display: flex; flex-direction: column; gap: 3px; }
-  .meta-label { font-size: clamp(9px, 2vw, 11px); color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-  .meta-value { font-size: clamp(13px, 3vw, 16px); font-weight: 700; }
+  .meta-item { display: flex; flex-direction: column; gap: 4px; }
+  .meta-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .meta-value { font-size: 15px; font-weight: 700; }
 
-  /* ── SLIDE 1 개요 ── */
-  .overview-grid {
+  /* ─────────────────────────────
+     SLIDE 1 — 행사 개요
+  ───────────────────────────── */
+  .grid-3 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(160px, 45%), 1fr));
-    gap: clamp(8px, 2vw, 14px);
-    position: relative; z-index: 1;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
   .ov-card {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: clamp(14px, 3vw, 22px);
-    position: relative; overflow: hidden; transition: transform 0.25s;
-  }
-  .ov-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; }
-  .ov-card:nth-child(1)::before{background:var(--accent1);}
-  .ov-card:nth-child(2)::before{background:var(--accent2);}
-  .ov-card:nth-child(3)::before{background:var(--accent3);}
-  .ov-card:nth-child(4)::before{background:var(--accent4);}
-  .ov-card:nth-child(5)::before{background:var(--accent1);}
-  .ov-card:nth-child(6)::before{background:var(--accent2);}
-  .ov-icon  { font-size: clamp(20px, 4vw, 28px); margin-bottom: 6px; }
-  .ov-label { font-size: clamp(9px, 1.8vw, 11px); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
-  .ov-val   { font-size: clamp(12px, 2.5vw, 15px); font-weight: 700; line-height: 1.4; }
-  .ov-val em { color: var(--accent1); font-style: normal; }
-  .ov-val small { font-size: clamp(10px, 2vw, 12px); color: var(--muted); }
-
-  /* ── SLIDE 2 규칙 ── */
-  .config-row {
-    display: grid; grid-template-columns: repeat(5, 1fr);
-    gap: clamp(6px, 1.5vw, 10px); margin-bottom: clamp(10px, 2vw, 14px);
-    position: relative; z-index: 1;
-  }
-  @media (max-width: 480px) { .config-row { grid-template-columns: repeat(3, 1fr); } }
-  .config-chip {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    border-radius: 10px; padding: clamp(8px, 2vw, 12px) 6px; text-align: center;
-  }
-  .chip-label { font-size: clamp(8px, 1.5vw, 10px); color: var(--muted); letter-spacing: 0.5px; }
-  .chip-val   { font-size: clamp(14px, 3vw, 20px); font-weight: 900; margin-top: 2px; }
-  .chip-val.police { color: #4fc3f7; }
-  .chip-val.thief  { color: #ff6b6b; }
-  .chip-val.time   { color: var(--accent1); }
-  .chip-val.round  { color: var(--accent3); }
-
-  .rules-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(8px, 2vw, 14px);
-    position: relative; z-index: 1;
-  }
-  @media (max-width: 480px) { .rules-layout { grid-template-columns: 1fr; } }
-  .rules-col { display: flex; flex-direction: column; gap: clamp(8px, 2vw, 12px); }
-  .rule-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: clamp(12px, 2.5vw, 18px) clamp(14px, 3vw, 22px);
-  }
-  .rule-title { font-size: clamp(11px, 2.2vw, 13px); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .rbadge { padding: 2px 9px; border-radius: 999px; font-size: clamp(10px, 2vw, 11px); font-weight: 700; }
-  .bp { background:#1a3a5c; color:#4fc3f7; }
-  .bt { background:#3a1a1a; color:#ff6b6b; }
-  .be { background:#1a3a1a; color:#4ecdc4; }
-  .bw { background:#2a2a1a; color:var(--accent1); }
-  .rule-list { list-style: none; }
-  .rule-list li {
-    font-size: clamp(11px, 2.2vw, 13px); color: #cdd9e5;
-    padding: 3px 0 3px 13px; position: relative; line-height: 1.6;
-  }
-  .rule-list li::before { content:'▸'; position:absolute; left:0; color:var(--accent3); font-size: 10px; top: 5px; }
-
-  /* ── SLIDE 3 장소 ── */
-  .places-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: clamp(8px, 2vw, 14px);
-    position: relative; z-index: 1;
-  }
-  @media (max-width: 400px) { .places-grid { grid-template-columns: 1fr; } }
-  .place-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: clamp(14px, 3vw, 22px) clamp(14px, 3vw, 22px);
-    display: flex; gap: clamp(10px, 2vw, 16px); align-items: flex-start;
-    position: relative; overflow: hidden; transition: all 0.25s;
-  }
-  .place-num { font-family:'Black Han Sans',sans-serif; font-size: clamp(28px, 6vw, 42px); color: var(--border); line-height:1; flex-shrink:0; width: clamp(32px,6vw,44px); }
-  .place-info h3 { font-size: clamp(13px, 2.5vw, 16px); font-weight: 700; margin-bottom: 3px; }
-  .place-info p  { font-size: clamp(11px, 2vw, 13px); color: var(--muted); line-height: 1.5; }
-  .place-icon { position:absolute; right:12px; bottom:10px; font-size: clamp(22px,4vw,30px); opacity:0.2; }
-
-  .criteria-box {
-    margin-top: clamp(10px, 2vw, 16px); background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: clamp(12px, 2.5vw, 16px) clamp(14px, 3vw, 20px);
-    position: relative; z-index: 1;
-  }
-  .criteria-label { font-size: clamp(9px, 1.8vw, 11px); color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-  .criteria-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ctag {
-    background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.3);
-    color: var(--accent3); padding: 3px 10px; border-radius: 999px;
-    font-size: clamp(10px, 2vw, 12px);
-  }
-
-  /* ── SLIDE 4 타임라인 ── */
-  .tl-wrap { display:flex; flex-direction:column; position: relative; z-index: 1; }
-  .tl-item { display:flex; gap: clamp(12px, 2.5vw, 20px); align-items:stretch; }
-  .tl-left {
-    width: clamp(80px, 18vw, 150px); flex-shrink:0;
-    display:flex; flex-direction:column; align-items:flex-end; padding: clamp(10px, 2vw, 14px) 0;
-  }
-  .tl-time   { font-family:'Black Han Sans',sans-serif; font-size: clamp(15px, 3.5vw, 20px); color:var(--accent1); }
-  .tl-person { font-size: clamp(10px, 2vw, 12px); color:var(--muted); margin-top:2px; }
-  .tl-conn   { display:flex; flex-direction:column; align-items:center; width: clamp(20px, 4vw, 28px); flex-shrink:0; }
-  .tl-dot    { width: clamp(10px, 2vw, 13px); height: clamp(10px, 2vw, 13px); border-radius:50%; background:var(--accent1); margin-top: clamp(16px, 3.5vw, 20px); flex-shrink:0; box-shadow:0 0 10px rgba(247,201,72,0.5); }
-  .tl-line   { width:2px; flex:1; background:var(--border); margin:0 auto; }
-  .tl-item:last-child .tl-line { display:none; }
-  .tl-right  { flex:1; padding: clamp(8px,2vw,10px) 0; }
-  .tl-card   { background:var(--card); border:1px solid var(--border); border-radius:10px; padding: clamp(10px,2vw,12px) clamp(12px,2.5vw,18px); }
-  .tl-ttl    { font-size: clamp(13px, 2.5vw, 15px); font-weight:700; margin-bottom:2px; }
-  .tl-note   { font-size: clamp(11px, 2vw, 12px); color:var(--muted); }
-
-  /* ── SLIDE 5 예산 ── */
-  .budget-top {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: clamp(8px, 2vw, 14px); margin-bottom: clamp(10px, 2vw, 16px);
-    position: relative; z-index: 1;
-  }
-  @media (max-width: 400px) { .budget-top { grid-template-columns: 1fr; } }
-  .btop-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: clamp(14px, 3vw, 20px) clamp(12px, 2.5vw, 22px); text-align: center;
+    border-radius: 14px; padding: 20px;
     position: relative; overflow: hidden;
   }
-  .btop-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; }
-  .btop-card:nth-child(1)::before { background: var(--accent1); }
-  .btop-card:nth-child(2)::before { background: var(--accent3); }
-  .btop-card:nth-child(3)::before { background: var(--accent4); }
-  .btop-icon  { font-size: clamp(20px, 4vw, 26px); margin-bottom: 6px; }
-  .btop-label { font-size: clamp(9px, 1.8vw, 11px); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-  .btop-val   { font-size: clamp(15px, 3.5vw, 22px); font-weight: 900; }
-  .btop-val.y  { color: var(--accent1); }
-  .btop-val.tl { color: var(--accent3); }
-  .btop-val.p  { color: var(--accent4); }
-  .btop-sub  { font-size: clamp(10px, 1.8vw, 11px); color: var(--muted); margin-top: 3px; }
+  .ov-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .ov-card:nth-child(1)::before { background: var(--accent1); }
+  .ov-card:nth-child(2)::before { background: var(--accent2); }
+  .ov-card:nth-child(3)::before { background: var(--accent3); }
+  .ov-card:nth-child(4)::before { background: var(--accent4); }
+  .ov-card:nth-child(5)::before { background: var(--accent1); }
+  .ov-card:nth-child(6)::before { background: var(--accent2); }
+  .ov-icon { font-size: 26px; margin-bottom: 8px; display: block; }
+  .ov-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; }
+  .ov-val { font-size: 14px; font-weight: 700; line-height: 1.5; }
+  .ov-val em { color: var(--accent1); font-style: normal; }
+  .ov-val small { font-size: 12px; color: var(--muted); font-weight: 400; }
 
-  .budget-table-wrap {
+  /* ─────────────────────────────
+     SLIDE 2 — 게임 규칙
+  ───────────────────────────── */
+  .chips {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px; margin-bottom: 16px;
+  }
+  .chip {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 8px; text-align: center;
+  }
+  .chip-label { font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .chip-val { font-size: 18px; font-weight: 900; display: block; }
+  .c-police { color: #4fc3f7; }
+  .c-thief  { color: #ff6b6b; }
+  .c-time   { color: var(--accent1); }
+  .c-round  { color: var(--accent3); }
+  .c-cam    { color: var(--accent4); }
+
+  .rules-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .rule-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+  .rule-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .rbadge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+  }
+  .rb-p { background: #1a3a5c; color: #4fc3f7; }
+  .rb-t { background: #3a1a1a; color: #ff6b6b; }
+  .rb-e { background: #1a3a1a; color: #4ecdc4; }
+  .rb-w { background: #2a2a1a; color: var(--accent1); }
+  .rule-list { list-style: none; }
+  .rule-list li {
+    font-size: 13px; color: #cdd9e5;
+    padding: 3px 0 3px 14px; position: relative; line-height: 1.65;
+  }
+  .rule-list li::before { content: '▸'; position: absolute; left: 0; color: var(--accent3); font-size: 10px; top: 6px; }
+
+  /* ─────────────────────────────
+     SLIDE 3 — 장소
+  ───────────────────────────── */
+  .places-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;
+  }
+  .place-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    overflow: hidden; margin-bottom: clamp(10px, 2vw, 14px);
-    position: relative; z-index: 1;
+    padding: 20px; display: flex; gap: 14px; align-items: flex-start;
+    position: relative; overflow: hidden;
   }
-  .budget-table { width: 100%; border-collapse: collapse; }
-  .budget-table thead tr { background: rgba(255,255,255,0.04); }
-  .budget-table th {
-    padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 18px);
-    font-size: clamp(9px, 1.8vw, 11px); letter-spacing: 1px; text-transform: uppercase;
-    color: var(--muted); font-weight: 700; text-align: left; border-bottom: 1px solid var(--border);
-    white-space: nowrap;
+  .place-num {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 38px; color: var(--border); line-height: 1; flex-shrink: 0; width: 40px;
   }
-  .budget-table td {
-    padding: clamp(10px, 2vw, 13px) clamp(10px, 2.5vw, 18px);
-    font-size: clamp(11px, 2.2vw, 14px); border-bottom: 1px solid rgba(48,54,61,0.5);
-    vertical-align: middle;
+  .place-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .place-info p  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .place-emoji { position: absolute; right: 14px; bottom: 12px; font-size: 26px; opacity: 0.2; }
+
+  .criteria-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
   }
-  .budget-table tr:last-child td { border-bottom: none; }
-  .cat-badge {
-    display: inline-block; padding: 2px 8px; border-radius: 999px;
-    font-size: clamp(9px, 1.8vw, 11px); font-weight: 700; white-space: nowrap;
+  .criteria-label {
+    font-size: 10px; color: var(--muted); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 10px; display: block;
   }
-  .cat-lunch { background: rgba(247,201,72,0.15); color: var(--accent1); }
-  .cat-item  { background: rgba(78,205,196,0.15); color: var(--accent3); }
-  .amount { font-weight: 700; text-align: right; white-space: nowrap; }
-  .note-text { font-size: clamp(10px, 2vw, 12px); color: var(--muted); }
-  /* 모바일: 비고 컬럼 숨기기 */
-  @media (max-width: 520px) {
-    .hide-mobile { display: none; }
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag-item {
+    background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.3);
+    color: var(--accent3); padding: 4px 12px; border-radius: 999px; font-size: 12px;
   }
 
-  .budget-total {
-    background: rgba(247,201,72,0.07); border: 1px solid rgba(247,201,72,0.3);
-    border-radius: 12px; padding: clamp(12px, 3vw, 16px) clamp(14px, 3vw, 24px);
-    display: flex; align-items: center; justify-content: space-between;
-    position: relative; z-index: 1; flex-wrap: wrap; gap: 8px;
+  /* ─────────────────────────────
+     SLIDE 4 — 타임라인
+  ───────────────────────────── */
+  .tl-list { display: flex; flex-direction: column; }
+  .tl-row  { display: flex; gap: 16px; align-items: stretch; }
+  .tl-left {
+    width: 130px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: flex-end;
+    padding: 14px 0;
   }
-  .total-label { font-size: clamp(11px, 2.2vw, 13px); color: var(--muted); }
-  .total-amount { font-family: 'Black Han Sans', sans-serif; font-size: clamp(20px, 5vw, 28px); color: var(--accent1); }
-  .total-note { font-size: clamp(10px, 2vw, 12px); color: var(--muted); margin-top: 2px; }
+  .tl-time   { font-family: 'Black Han Sans', sans-serif; font-size: 20px; color: var(--accent1); line-height: 1; }
+  .tl-who    { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .tl-pipe   { display: flex; flex-direction: column; align-items: center; width: 26px; flex-shrink: 0; }
+  .tl-dot    { width: 13px; height: 13px; border-radius: 50%; background: var(--accent1); margin-top: 20px; flex-shrink: 0; box-shadow: 0 0 10px rgba(247,201,72,0.5); }
+  .tl-line   { width: 2px; flex: 1; background: var(--border); }
+  .tl-row:last-child .tl-line { display: none; }
+  .tl-body   { flex: 1; padding: 10px 0; }
+  .tl-card   { background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: 13px 18px; }
+  .tl-card-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .tl-card-note  { font-size: 12px; color: var(--muted); }
+
+  /* ─────────────────────────────
+     SLIDE 5 — 예산
+  ───────────────────────────── */
+  .budget-summary {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 14px; margin-bottom: 16px;
+  }
+  .bsum {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .bsum::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .bsum:nth-child(1)::before { background: var(--accent1); }
+  .bsum:nth-child(2)::before { background: var(--accent3); }
+  .bsum:nth-child(3)::before { background: var(--accent4); }
+  .bsum-icon  { font-size: 24px; margin-bottom: 8px; display: block; }
+  .bsum-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .bsum-val   { font-size: 20px; font-weight: 900; display: block; }
+  .bsum-val.y { color: var(--accent1); }
+  .bsum-val.t { color: var(--accent3); }
+  .bsum-val.p { color: var(--accent4); }
+  .bsum-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; display: block; }
+
+  .btable-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; margin-bottom: 14px;
+  }
+  .btable { width: 100%; border-collapse: collapse; }
+  .btable thead tr { background: rgba(255,255,255,0.04); }
+  .btable th {
+    padding: 11px 18px; font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+    text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .btable td {
+    padding: 12px 18px; font-size: 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: middle;
+  }
+  .btable tr:last-child td { border-bottom: none; }
+  .cbadge {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .cb-lunch { background: rgba(247,201,72,0.15); color: var(--accent1); }
+  .cb-item  { background: rgba(78,205,196,0.15); color: var(--accent3); }
+  .td-amt   { font-weight: 700; text-align: right; white-space: nowrap; }
+  .td-note  { font-size: 12px; color: var(--muted); }
+
+  .budget-foot {
+    background: rgba(247,201,72,0.07); border: 1px solid rgba(247,201,72,0.3);
+    border-radius: 12px; padding: 16px 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .foot-label { font-size: 12px; color: var(--muted); }
+  .foot-note  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .foot-amt   { font-family: 'Black Han Sans', sans-serif; font-size: 26px; color: var(--accent1); white-space: nowrap; }
+
+  /* ─────────────────────────────
+     NAVIGATION
+  ───────────────────────────── */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    padding: 12px 20px 16px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    background: linear-gradient(to top, rgba(13,17,23,0.96) 70%, transparent);
+    backdrop-filter: blur(4px);
+  }
+  .nav-btn {
+    background: rgba(22,27,34,0.9); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 24px; border-radius: 999px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
+    cursor: pointer; transition: all 0.2s; min-width: 80px;
+  }
+  .nav-btn:hover, .nav-btn:active { background: var(--accent1); color: #000; border-color: var(--accent1); }
+  .nav-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+  .dot-row { display: flex; align-items: center; gap: 7px; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border); cursor: pointer; transition: all 0.3s; display: block;
+  }
+  .dot.on { background: var(--accent1); transform: scale(1.5); }
+
+  .slide-counter {
+    position: fixed; bottom: 18px; right: 18px; z-index: 101;
+    font-size: 11px; color: var(--muted); letter-spacing: 2px;
+  }
+
+  /* ─────────────────────────────
+     MOBILE (max 640px)
+  ───────────────────────────── */
+  @media (max-width: 640px) {
+    .slide-inner {
+      padding: 28px 18px 100px;
+      justify-content: flex-start !important;
+      min-height: auto;
+    }
+    .s0 .slide-inner { padding-top: 48px; }
+
+    .stitle  { font-size: clamp(22px, 6vw, 32px); margin-bottom: 20px; }
+    .title-main { font-size: clamp(44px, 13vw, 64px); }
+    .title-sub  { font-size: 14px; margin-bottom: 28px; }
+    .title-meta { gap: 18px; }
+    .meta-value { font-size: 13px; }
+
+    /* 개요: 2열 */
+    .grid-3 { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ov-card { padding: 14px; border-radius: 11px; }
+    .ov-icon { font-size: 20px; margin-bottom: 5px; }
+    .ov-val  { font-size: 13px; }
+    .ov-val small { font-size: 11px; }
+
+    /* 칩: 3열 */
+    .chips { grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 12px; }
+    .chip  { padding: 9px 4px; border-radius: 8px; }
+    .chip-val { font-size: 15px; }
+    .chip-label { font-size: 9px; }
+
+    /* 규칙: 1열 */
+    .rules-grid { grid-template-columns: 1fr; gap: 9px; }
+    .rule-card  { padding: 13px 15px; }
+    .rule-list li { font-size: 12px; }
+
+    /* 장소: 1열 */
+    .places-grid { grid-template-columns: 1fr; gap: 9px; margin-bottom: 10px; }
+    .place-card  { padding: 14px; }
+    .place-num   { font-size: 30px; width: 34px; }
+    .place-info h3 { font-size: 14px; }
+    .place-info p  { font-size: 11px; }
+    .criteria-box  { padding: 12px 14px; }
+    .tag-item      { font-size: 11px; padding: 3px 10px; }
+
+    /* 타임라인 */
+    .tl-left { width: 82px; padding: 10px 0; }
+    .tl-time { font-size: 16px; }
+    .tl-card { padding: 10px 13px; }
+    .tl-card-title { font-size: 13px; }
+    .tl-card-note  { font-size: 11px; }
+
+    /* 예산 */
+    .budget-summary { grid-template-columns: 1fr; gap: 9px; margin-bottom: 12px; }
+    .bsum { padding: 14px; }
+    .bsum-val { font-size: 18px; }
+
+    /* 테이블: 비고 숨김 */
+    .hide-m { display: none; }
+    .btable th, .btable td { padding: 10px 12px; font-size: 12px; }
+    .cbadge { font-size: 10px; padding: 2px 7px; }
+    .td-amt { font-size: 13px; }
+
+    .budget-foot { padding: 13px 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .foot-amt { font-size: 22px; }
+  }
+
+  /* ─────────────────────────────
+     TABLET (641px ~ 900px)
+  ───────────────────────────── */
+  @media (min-width: 641px) and (max-width: 900px) {
+    .slide-inner { padding: 36px 36px 100px; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .chips  { grid-template-columns: repeat(3, 1fr); }
+    .budget-summary { grid-template-columns: 1fr 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
+<div class="stage">
+<div class="bg-dots"></div>
 
-<!-- SLIDE 0: TITLE -->
-<div class="slides-wrapper">
-<div class="dot-grid"></div>
-<div class="glow g1"></div>
-<div class="glow g2"></div>
-
-<div class="slide slide-0 active">
-  <div class="title-badge">2026 행사 기획 발표</div>
-  <div class="title-main">경도를<br>기다리며</div>
-  <div class="title-sub">경찰과 도둑 야외 활동 기획안</div>
-  <div class="title-meta">
-    <div class="meta-item"><span class="meta-label">📅 일시</span><span class="meta-value">2026. 5. 2 (토)</span></div>
-    <div class="meta-item"><span class="meta-label">📍 장소</span><span class="meta-value">중랑캠핑숲 근처</span></div>
-    <div class="meta-item"><span class="meta-label">👥 인원</span><span class="meta-value">총 30명</span></div>
-  </div>
-</div>
-
-<!-- SLIDE 1: 행사 개요 -->
-<div class="slide slide-1 scroll-top">
-  <div class="glow g3"></div>
-  <div class="section-tag">01 — OVERVIEW</div>
-  <div class="section-title">행사 개요</div>
-  <div class="overview-grid">
-    <div class="ov-card">
-      <div class="ov-icon">📅</div>
-      <div class="ov-label">일시</div>
-      <div class="ov-val">2026년 5월 2일 (토)<br><em>오전 10시 ~ 오후 2시</em></div>
-    </div>
-    <div class="ov-card">
-      <div class="ov-icon">📍</div>
-      <div class="ov-label">장소</div>
-      <div class="ov-val">중랑캠핑숲 근처 공원<br><small>(답사 후 최종 확정)</small></div>
-    </div>
-    <div class="ov-card">
-      <div class="ov-icon">👥</div>
-      <div class="ov-label">참가 인원</div>
-      <div class="ov-val">총 <em>30명</em><br><small>고등학생 20명 · 선생님 10명</small></div>
-    </div>
-    <div class="ov-card">
-      <div class="ov-icon">💰</div>
-      <div class="ov-label">총 예산</div>
-      <div class="ov-val"><em>124,940원</em><br><small>경도 물품 + 점심식사</small></div>
-    </div>
-    <div class="ov-card">
-      <div class="ov-icon">🎫</div>
-      <div class="ov-label">참가비</div>
-      <div class="ov-val">1인당 <em>3,000~5,000원</em><br><small>지원 예산에 따라 변동</small></div>
-    </div>
-    <div class="ov-card">
-      <div class="ov-icon">🎯</div>
-      <div class="ov-label">주요 활동</div>
-      <div class="ov-val"><em>경찰과 도둑 게임</em><br><small>2~3라운드 야외 진행</small></div>
+<!-- ── S0 타이틀 ── -->
+<div class="slide s0 active">
+  <div class="slide-inner">
+    <div class="badge">2026 행사 기획 발표</div>
+    <div class="title-main">경도를<br>기다리며</div>
+    <div class="title-sub">경찰과 도둑 야외 활동 기획안</div>
+    <div class="title-meta">
+      <div class="meta-item"><span class="meta-label">📅 일시</span><span class="meta-value">2026. 5. 2 (토)</span></div>
+      <div class="meta-item"><span class="meta-label">📍 장소</span><span class="meta-value">중랑캠핑숲 근처 (미정)</span></div>
+      <div class="meta-item"><span class="meta-label">👥 인원</span><span class="meta-value">총 30명</span></div>
     </div>
   </div>
 </div>
 
-<!-- SLIDE 2: 게임 규칙 -->
-<div class="slide slide-2 scroll-top">
-  <div class="glow g4"></div>
-  <div class="section-tag">02 — GAME RULES</div>
-  <div class="section-title">🚨 경찰과 도둑 게임</div>
-  <div class="config-row">
-    <div class="config-chip"><div class="chip-label">👮 경찰</div><div class="chip-val police">10명</div></div>
-    <div class="config-chip"><div class="chip-label">🦹 도둑</div><div class="chip-val thief">20명</div></div>
-    <div class="config-chip"><div class="chip-label">⏱ 시간</div><div class="chip-val time">1시간</div></div>
-    <div class="config-chip"><div class="chip-label">🔄 라운드</div><div class="chip-val round">2~3R</div></div>
-    <div class="config-chip"><div class="chip-label">📸 기자</div><div class="chip-val" style="color:var(--accent4)">2명</div></div>
+<!-- ── S1 행사 개요 ── -->
+<div class="slide s1">
+  <div class="slide-inner">
+    <div class="tag">01 — Overview</div>
+    <div class="stitle">행사 개요</div>
+    <div class="grid-3">
+      <div class="ov-card">
+        <span class="ov-icon">📅</span>
+        <div class="ov-label">일시</div>
+        <div class="ov-val">2026년 5월 2일 (토)<br><em>오전 10시 ~ 오후 2시</em></div>
+      </div>
+      <div class="ov-card">
+        <span class="ov-icon">📍</span>
+        <div class="ov-label">장소</div>
+        <div class="ov-val">중랑캠핑숲 근처 공원<br><small>답사 후 최종 확정</small></div>
+      </div>
+      <div class="ov-card">
+        <span class="ov-icon">👥</span>
+        <div class="ov-label">참가 인원</div>
+        <div class="ov-val">총 <em>30명</em><br><small>고등학생 20명 · 선생님 10명</small></div>
+      </div>
+      <div class="ov-card">
+        <span class="ov-icon">💰</span>
+        <div class="ov-label">총 예산</div>
+        <div class="ov-val"><em>124,940원</em><br><small>경도 물품 + 점심식사</small></div>
+      </div>
+      <div class="ov-card">
+        <span class="ov-icon">🎫</span>
+        <div class="ov-label">참가비</div>
+        <div class="ov-val">1인당 <em>3,000~5,000원</em><br><small>지원 예산에 따라 변동</small></div>
+      </div>
+      <div class="ov-card">
+        <span class="ov-icon">🎯</span>
+        <div class="ov-label">주요 활동</div>
+        <div class="ov-val"><em>경찰과 도둑 게임</em><br><small>2~3라운드 야외 진행</small></div>
+      </div>
+    </div>
   </div>
-  <div class="rules-layout">
-    <div class="rules-col">
+</div>
+
+<!-- ── S2 게임 규칙 ── -->
+<div class="slide s2">
+  <div class="slide-inner">
+    <div class="tag">02 — Game Rules</div>
+    <div class="stitle">🚨 경찰과 도둑 게임</div>
+    <div class="chips">
+      <div class="chip"><span class="chip-label">👮 경찰</span><span class="chip-val c-police">10명</span></div>
+      <div class="chip"><span class="chip-label">🦹 도둑</span><span class="chip-val c-thief">20명</span></div>
+      <div class="chip"><span class="chip-label">⏱ 시간</span><span class="chip-val c-time">1시간</span></div>
+      <div class="chip"><span class="chip-label">🔄 라운드</span><span class="chip-val c-round">2~3R</span></div>
+      <div class="chip"><span class="chip-label">📸 기자</span><span class="chip-val c-cam">2명</span></div>
+    </div>
+    <div class="rules-grid">
       <div class="rule-card">
-        <div class="rule-title"><span class="rbadge bp">👮 경찰</span></div>
+        <div class="rule-head"><span class="rbadge rb-p">👮 경찰</span></div>
         <ul class="rule-list">
           <li>도둑을 손으로 터치하면 체포</li>
-          <li>감옥 주변 1~2명 배치 가능</li>
+          <li>감옥 주변 1~2명 배치 가능 (탈옥 방지)</li>
         </ul>
       </div>
       <div class="rule-card">
-        <div class="rule-title"><span class="rbadge bt">🦹 도둑</span></div>
+        <div class="rule-head"><span class="rbadge rb-t">🦹 도둑</span></div>
         <ul class="rule-list">
           <li>제한 시간 동안 최대한 오래 살아남기</li>
           <li>잡히면 감옥으로 이동 후 대기</li>
         </ul>
       </div>
-    </div>
-    <div class="rules-col">
       <div class="rule-card">
-        <div class="rule-title"><span class="rbadge be">🔓 탈옥 규칙</span></div>
+        <div class="rule-head"><span class="rbadge rb-e">🔓 탈옥 규칙</span></div>
         <ul class="rule-list">
-          <li>자유 도둑이 감옥 내 도둑 손 터치 → 탈옥</li>
+          <li>자유 도둑이 감옥 내 도둑의 손을 터치 → 탈옥 성공</li>
           <li>탈옥 후 <strong style="color:var(--accent3)">10초 무적</strong></li>
           <li>한 번에 한 명씩만 탈옥 가능</li>
         </ul>
       </div>
       <div class="rule-card">
-        <div class="rule-title"><span class="rbadge bw">🏆 승리 조건</span></div>
+        <div class="rule-head"><span class="rbadge rb-w">🏆 승리 조건</span></div>
         <ul class="rule-list">
-          <li><strong style="color:#4fc3f7">경찰 승리</strong> — 전원 체포</li>
-          <li><strong style="color:#ff6b6b">도둑 승리</strong> — 한 명이라도 자유 유지</li>
+          <li><strong style="color:#4fc3f7">경찰 승리</strong> — 제한 시간 내 도둑 전원 체포</li>
+          <li><strong style="color:#ff6b6b">도둑 승리</strong> — 시간 종료까지 한 명이라도 자유 유지</li>
         </ul>
       </div>
     </div>
   </div>
 </div>
 
-<!-- SLIDE 3: 장소 -->
-<div class="slide slide-3 scroll-top">
-  <div class="glow g1" style="opacity:0.07;"></div>
-  <div class="section-tag">03 — LOCATIONS</div>
-  <div class="section-title">📍 장소 후보지</div>
-  <div class="places-grid">
-    <div class="place-card">
-      <div class="place-num">01</div>
-      <div class="place-info"><h3>우디안</h3><p>공간 구조 및 숨을 공간 확인 예정</p></div>
-      <div class="place-icon">🌲</div>
+<!-- ── S3 장소 ── -->
+<div class="slide s3">
+  <div class="slide-inner">
+    <div class="tag">03 — Locations</div>
+    <div class="stitle">📍 장소 후보지</div>
+    <div class="places-grid">
+      <div class="place-card">
+        <div class="place-num">01</div>
+        <div class="place-info"><h3>우디안</h3><p>공간 구조 및 숨을 공간 확인 예정</p></div>
+        <div class="place-emoji">🌲</div>
+      </div>
+      <div class="place-card">
+        <div class="place-num">02</div>
+        <div class="place-info"><h3>근린공원</h3><p>교회에서의 동선 유리</p></div>
+        <div class="place-emoji">🏞️</div>
+      </div>
+      <div class="place-card">
+        <div class="place-num">03</div>
+        <div class="place-info"><h3>중랑캠핑숲 근처 공원</h3><p>현재 1순위 후보 — 공간 규모 적합</p></div>
+        <div class="place-emoji">⛺</div>
+      </div>
+      <div class="place-card">
+        <div class="place-num">04</div>
+        <div class="place-info"><h3>중랑구청사거리 공원</h3><p>접근성 좋음 — 토요일 분위기 확인 필요</p></div>
+        <div class="place-emoji">🏙️</div>
+      </div>
     </div>
-    <div class="place-card">
-      <div class="place-num">02</div>
-      <div class="place-info"><h3>근린공원</h3><p>교회에서의 동선 유리</p></div>
-      <div class="place-icon">🏞️</div>
-    </div>
-    <div class="place-card">
-      <div class="place-num">03</div>
-      <div class="place-info"><h3>중랑캠핑숲 근처 공원</h3><p>현재 1순위 후보 — 공간 규모 적합</p></div>
-      <div class="place-icon">⛺</div>
-    </div>
-    <div class="place-card">
-      <div class="place-num">04</div>
-      <div class="place-info"><h3>중랑구청사거리 공원</h3><p>접근성 좋음 — 토요일 분위기 확인 필요</p></div>
-      <div class="place-icon">🏙️</div>
-    </div>
-  </div>
-  <div class="criteria-box">
-    <div class="criteria-label">📋 답사 체크리스트</div>
-    <div class="criteria-tags">
-      <span class="ctag">단체 모일 수 있는 스팟</span>
-      <span class="ctag">주차장 유무</span>
-      <span class="ctag">토요일 오전 분위기</span>
-      <span class="ctag">감옥 구역 공간</span>
-      <span class="ctag">숨을 공간</span>
-      <span class="ctag">안전성</span>
-      <span class="ctag">교회 동선</span>
-    </div>
-  </div>
-</div>
-
-<!-- SLIDE 4: 타임라인 -->
-<div class="slide slide-4 scroll-top">
-  <div class="glow g2" style="opacity:0.07;"></div>
-  <div class="section-tag">04 — TIMELINE</div>
-  <div class="section-title">🕙 당일 타임라인</div>
-  <div class="tl-wrap">
-    <div class="tl-item">
-      <div class="tl-left"><div class="tl-time">10:00</div><div class="tl-person">👤 김환희</div></div>
-      <div class="tl-conn"><div class="tl-dot"></div><div class="tl-line"></div></div>
-      <div class="tl-right"><div class="tl-card"><div class="tl-ttl">집합 및 오리엔테이션</div><div class="tl-note">역할 설정 및 룰 설명</div></div></div>
-    </div>
-    <div class="tl-item">
-      <div class="tl-left"><div class="tl-time">11:00</div><div class="tl-person">👤 김환희</div></div>
-      <div class="tl-conn"><div class="tl-dot"></div><div class="tl-line"></div></div>
-      <div class="tl-right"><div class="tl-card"><div class="tl-ttl">경찰과 도둑 장소 도착</div><div class="tl-note">2차 룰 설명</div></div></div>
-    </div>
-    <div class="tl-item">
-      <div class="tl-left"><div class="tl-time">11:15</div><div class="tl-person">👤 이성호</div></div>
-      <div class="tl-conn"><div class="tl-dot" style="background:var(--accent3);box-shadow:0 0 10px rgba(78,205,196,0.5)"></div><div class="tl-line"></div></div>
-      <div class="tl-right"><div class="tl-card"><div class="tl-ttl">🤸 준비 운동</div><div class="tl-note">부상 방지 스트레칭</div></div></div>
-    </div>
-    <div class="tl-item">
-      <div class="tl-left"><div class="tl-time">11:30</div><div class="tl-person">👥 전체</div></div>
-      <div class="tl-conn"><div class="tl-dot" style="background:var(--accent2);box-shadow:0 0 10px rgba(255,107,107,0.5)"></div><div class="tl-line"></div></div>
-      <div class="tl-right"><div class="tl-card" style="border-color:rgba(255,107,107,0.4);background:rgba(255,107,107,0.07)"><div class="tl-ttl" style="color:var(--accent2)">🚨 경찰과 도둑 진행</div><div class="tl-note">2~3라운드 / 약 1시간</div></div></div>
-    </div>
-    <div class="tl-item">
-      <div class="tl-left"><div class="tl-time">12:30</div><div class="tl-person">👤 김환희</div></div>
-      <div class="tl-conn"><div class="tl-dot" style="background:var(--accent4);box-shadow:0 0 10px rgba(162,155,254,0.5)"></div><div class="tl-line"></div></div>
-      <div class="tl-right"><div class="tl-card"><div class="tl-ttl">🏆 종료 및 교회 복귀</div><div class="tl-note">시상식 및 점심식사</div></div></div>
+    <div class="criteria-box">
+      <span class="criteria-label">📋 답사 체크리스트</span>
+      <div class="tags-wrap">
+        <span class="tag-item">단체 모일 수 있는 스팟</span>
+        <span class="tag-item">주차장 유무</span>
+        <span class="tag-item">토요일 오전 분위기</span>
+        <span class="tag-item">감옥 구역 공간</span>
+        <span class="tag-item">숨을 공간 확보</span>
+        <span class="tag-item">안전성</span>
+        <span class="tag-item">교회 동선 연결</span>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- SLIDE 5: 예산 -->
-<div class="slide slide-5 scroll-top">
-  <div class="glow g5" style="opacity:0.08;"></div>
-  <div class="section-tag">05 — BUDGET</div>
-  <div class="section-title">💰 예산 계획</div>
-  <div class="budget-top">
-    <div class="btop-card">
-      <div class="btop-icon">💵</div>
-      <div class="btop-label">총 예산</div>
-      <div class="btop-val y">124,940원</div>
-      <div class="btop-sub">경도 물품 + 점심식사</div>
+<!-- ── S4 타임라인 ── -->
+<div class="slide s4">
+  <div class="slide-inner">
+    <div class="tag">04 — Timeline</div>
+    <div class="stitle">🕙 당일 타임라인</div>
+    <div class="tl-list">
+      <div class="tl-row">
+        <div class="tl-left"><div class="tl-time">10:00</div><div class="tl-who">👤 김환희</div></div>
+        <div class="tl-pipe"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-card-title">집합 및 오리엔테이션</div><div class="tl-card-note">역할 설정 및 룰 설명</div></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-left"><div class="tl-time">11:00</div><div class="tl-who">👤 김환희</div></div>
+        <div class="tl-pipe"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-card-title">경찰과 도둑 장소 도착</div><div class="tl-card-note">2차 룰 설명</div></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-left"><div class="tl-time">11:15</div><div class="tl-who">👤 이성호</div></div>
+        <div class="tl-pipe"><div class="tl-dot" style="background:var(--accent3);box-shadow:0 0 10px rgba(78,205,196,0.5)"></div><div class="tl-line"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-card-title">🤸 준비 운동</div><div class="tl-card-note">부상 방지 스트레칭</div></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-left"><div class="tl-time">11:30</div><div class="tl-who">👥 전체</div></div>
+        <div class="tl-pipe"><div class="tl-dot" style="background:var(--accent2);box-shadow:0 0 10px rgba(255,107,107,0.5)"></div><div class="tl-line"></div></div>
+        <div class="tl-body"><div class="tl-card" style="border-color:rgba(255,107,107,0.4);background:rgba(255,107,107,0.07)"><div class="tl-card-title" style="color:var(--accent2)">🚨 경찰과 도둑 진행</div><div class="tl-card-note">2~3라운드 / 약 1시간</div></div></div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-left"><div class="tl-time">12:30</div><div class="tl-who">👤 김환희</div></div>
+        <div class="tl-pipe"><div class="tl-dot" style="background:var(--accent4);box-shadow:0 0 10px rgba(162,155,254,0.5)"></div><div class="tl-line"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-card-title">🏆 종료 및 교회 복귀</div><div class="tl-card-note">시상식 및 점심식사</div></div></div>
+      </div>
     </div>
-    <div class="btop-card">
-      <div class="btop-icon">🎒</div>
-      <div class="btop-label">경도 물품</div>
-      <div class="btop-val tl">34,300원</div>
-      <div class="btop-sub">방울 + 표시 장치</div>
-    </div>
-    <div class="btop-card">
-      <div class="btop-icon">🍱</div>
-      <div class="btop-label">점심식사</div>
-      <div class="btop-val p">90,640원</div>
-      <div class="btop-sub">김밥 + 물</div>
-    </div>
-  </div>
-
-  <div class="budget-table-wrap">
-    <table class="budget-table">
-      <thead>
-        <tr>
-          <th>구분</th>
-          <th>항목</th>
-          <th style="text-align:right">금액</th>
-          <th class="hide-mobile">비고</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="cat-badge cat-lunch">🍱 점심식사</span></td>
-          <td>소소김밥</td>
-          <td class="amount">80,000원</td>
-          <td class="note-text hide-mobile">4,000원 × 20명</td>
-        </tr>
-        <tr>
-          <td><span class="cat-badge cat-item">🎒 경도 물품</span></td>
-          <td>경찰 방울</td>
-          <td class="amount">4,600원</td>
-          <td class="note-text hide-mobile">10개 4,600원</td>
-        </tr>
-        <tr>
-          <td><span class="cat-badge cat-item">🎒 경도 물품</span></td>
-          <td>도둑 표시 장치</td>
-          <td class="amount">29,700원</td>
-          <td class="note-text hide-mobile">1개 990원</td>
-        </tr>
-        <tr>
-          <td><span class="cat-badge cat-lunch">🍱 점심식사</span></td>
-          <td>물</td>
-          <td class="amount">10,640원</td>
-          <td class="note-text hide-mobile">40개 500ml</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="budget-total">
-    <div>
-      <div class="total-label">합계</div>
-      <div class="total-note">참가비 별도 (1인 3,000~5,000원)</div>
-    </div>
-    <div class="total-amount">₩124,940</div>
   </div>
 </div>
 
-</div><!-- slides-wrapper -->
-
-<!-- NAVIGATION -->
-<div class="dot-nav" id="dotNav"></div>
-<div class="nav">
-  <button id="btnPrev">← 이전</button>
-  <button id="btnNext">다음 →</button>
+<!-- ── S5 예산 ── -->
+<div class="slide s5">
+  <div class="slide-inner">
+    <div class="tag">05 — Budget</div>
+    <div class="stitle">💰 예산 계획</div>
+    <div class="budget-summary">
+      <div class="bsum">
+        <span class="bsum-icon">💵</span>
+        <span class="bsum-label">총 예산</span>
+        <span class="bsum-val y">124,940원</span>
+        <span class="bsum-sub">경도 물품 + 점심식사</span>
+      </div>
+      <div class="bsum">
+        <span class="bsum-icon">🎒</span>
+        <span class="bsum-label">경도 물품</span>
+        <span class="bsum-val t">34,300원</span>
+        <span class="bsum-sub">경찰 방울 + 도둑 표시 장치</span>
+      </div>
+      <div class="bsum">
+        <span class="bsum-icon">🍱</span>
+        <span class="bsum-label">점심식사</span>
+        <span class="bsum-val p">90,640원</span>
+        <span class="bsum-sub">소소김밥 + 물</span>
+      </div>
+    </div>
+    <div class="btable-wrap">
+      <table class="btable">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>항목</th>
+            <th style="text-align:right">금액</th>
+            <th class="hide-m">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="cbadge cb-lunch">🍱 점심식사</span></td>
+            <td>소소김밥</td>
+            <td class="td-amt">80,000원</td>
+            <td class="td-note hide-m">4,000원 × 20명</td>
+          </tr>
+          <tr>
+            <td><span class="cbadge cb-item">🎒 경도 물품</span></td>
+            <td>경찰 방울</td>
+            <td class="td-amt">4,600원</td>
+            <td class="td-note hide-m">10개 4,600원</td>
+          </tr>
+          <tr>
+            <td><span class="cbadge cb-item">🎒 경도 물품</span></td>
+            <td>도둑 표시 장치</td>
+            <td class="td-amt">29,700원</td>
+            <td class="td-note hide-m">1개 990원</td>
+          </tr>
+          <tr>
+            <td><span class="cbadge cb-lunch">🍱 점심식사</span></td>
+            <td>물</td>
+            <td class="td-amt">10,640원</td>
+            <td class="td-note hide-m">40개 500ml</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="budget-foot">
+      <div>
+        <div class="foot-label">합계</div>
+        <div class="foot-note">참가비 별도 (1인 3,000~5,000원 / 지원 예산에 따라 변동)</div>
+      </div>
+      <div class="foot-amt">₩124,940</div>
+    </div>
+  </div>
 </div>
-<div class="slide-num" id="slideNum"></div>
+
+</div><!-- stage -->
+
+<!-- 네비게이션 -->
+<div class="nav-bar">
+  <button class="nav-btn" id="btnPrev">← 이전</button>
+  <div class="dot-row" id="dotRow"></div>
+  <button class="nav-btn" id="btnNext">다음 →</button>
+</div>
+<div class="slide-counter" id="counter"></div>
 
 <script>
   const slides = document.querySelectorAll('.slide');
-  const dotNav = document.getElementById('dotNav');
-  const slideNum = document.getElementById('slideNum');
-  let current = 0;
+  const dotRow = document.getElementById('dotRow');
+  const counter = document.getElementById('counter');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  let cur = 0;
 
   slides.forEach((_, i) => {
     const d = document.createElement('span');
-    d.onclick = () => goTo(i);
-    dotNav.appendChild(d);
+    d.className = 'dot';
+    d.onclick = () => go(i);
+    dotRow.appendChild(d);
   });
 
-  function updateUI() {
-    slides.forEach((s, i) => {
-      s.classList.toggle('active', i === current);
-      if (i === current) s.scrollTop = 0;
-    });
-    dotNav.querySelectorAll('span').forEach((d, i) => d.classList.toggle('on', i === current));
-    slideNum.textContent = `${current + 1} / ${slides.length}`;
-    document.getElementById('btnPrev').style.opacity = current === 0 ? '0.4' : '1';
-    document.getElementById('btnNext').style.opacity = current === slides.length - 1 ? '0.4' : '1';
+  function go(n) {
+    slides[cur].classList.remove('active');
+    slides[cur].scrollTop = 0;
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides[cur].classList.add('active');
+    dotRow.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === cur));
+    counter.textContent = `${cur + 1} / ${slides.length}`;
+    btnPrev.disabled = cur === 0;
+    btnNext.disabled = cur === slides.length - 1;
   }
 
-  function changeSlide(dir) {
-    current = Math.max(0, Math.min(slides.length - 1, current + dir));
-    updateUI();
-  }
-  function goTo(i) { current = i; updateUI(); }
-
-  document.getElementById('btnPrev').onclick = () => changeSlide(-1);
-  document.getElementById('btnNext').onclick = () => changeSlide(1);
+  btnPrev.onclick = () => go(cur - 1);
+  btnNext.onclick = () => go(cur + 1);
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changeSlide(-1);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(cur - 1);
   });
 
   // 스와이프
-  let touchStartX = 0, touchStartY = 0;
-  document.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
   document.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      changeSlide(dx < 0 ? 1 : -1);
-    }
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) go(dx < 0 ? cur + 1 : cur - 1);
   }, { passive: true });
 
-  updateUI();
+  go(0);
 </script>
 </body>
 </html>
